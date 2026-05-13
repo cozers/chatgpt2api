@@ -25,7 +25,8 @@ jobs:
       - name: Fetch upstream
         run: |
           git remote add upstream https://github.com/ZyphrZero/chatgpt2api.git
-          git fetch upstream main --tags
+          git fetch upstream main
+          git fetch upstream "refs/tags/v*:refs/tags/upstream/v*"
 
       - name: Merge upstream main
         run: |
@@ -35,11 +36,14 @@ jobs:
       - name: Push branch
         run: git push origin HEAD:"${GITHUB_REF_NAME}"
 
-      - name: Mirror upstream tags
+      - name: Sync upstream release tags
         run: |
-          for tag in $(git tag -l 'v*'); do
+          current_head="$(git rev-parse HEAD)"
+          for tag in $(git tag -l 'upstream/v*' | sed 's#^upstream/##'); do
             if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
               continue
             fi
-            git push origin "refs/tags/${tag}:refs/tags/${tag}"
+            body="$(git for-each-ref --format='%(contents)' "refs/tags/upstream/${tag}")"
+            git tag -a -f "${tag}" "${current_head}" -m "${body:-${tag}}"
+            git push origin "refs/tags/${tag}"
           done

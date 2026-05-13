@@ -95,11 +95,11 @@ func TestGoReleaserArchiveDoesNotShipWebDist(t *testing.T) {
 	if strings.Contains(config, "- docker-compose.yml") {
 		t.Fatal(".goreleaser.yaml archive must not reference root docker-compose.yml")
 	}
-	if !strings.Contains(config, "dockerfile: deploy/Dockerfile.release") {
-		t.Fatal(".goreleaser.yaml Docker images must use deploy/Dockerfile.release")
+	if strings.Contains(config, "dockers_v2:") {
+		t.Fatal(".goreleaser.yaml must not publish Docker images")
 	}
-	if strings.Contains(config, "Dockerfile.goreleaser") {
-		t.Fatal(".goreleaser.yaml must not reference Dockerfile.goreleaser")
+	if strings.Contains(config, "dockerfile: deploy/Dockerfile.release") {
+		t.Fatal(".goreleaser.yaml must not keep Docker release build configuration")
 	}
 }
 
