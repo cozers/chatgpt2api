@@ -22,11 +22,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"chatgpt2api/internal/version"
 )
 
 const (
 	updateCacheTTL       = 20 * time.Minute
-	defaultUpdateRepo    = "ZyphrZero/chatgpt2api"
 	defaultGitHubAPIBase = "https://api.github.com"
 	maxUpdateDownload    = 500 * 1024 * 1024
 )
@@ -95,7 +96,7 @@ type githubAsset struct {
 func NewUpdateService(options UpdateOptions) *UpdateService {
 	repo := strings.TrimSpace(options.Repo)
 	if repo == "" {
-		repo = defaultUpdateRepo
+		repo = version.GetDefaultUpdateRepo()
 	}
 	apiBaseURL := strings.TrimRight(strings.TrimSpace(options.APIBaseURL), "/")
 	if apiBaseURL == "" {

@@ -13,10 +13,11 @@ var Version = "0.0.0-dev"
 
 // Commit, Date, and BuildType are overridden by release builds.
 var (
-	Commit     = "unknown"
-	Date       = "unknown"
-	BuildType  = "source"
-	Deployment = "binary"
+	Commit            = "unknown"
+	Date              = "unknown"
+	BuildType         = "source"
+	Deployment        = "binary"
+	DefaultUpdateRepo = "ZyphrZero/chatgpt2api"
 )
 
 type Info struct {
@@ -50,6 +51,16 @@ func GetDeployment() string {
 		return value
 	}
 	return "binary"
+}
+
+func GetDefaultUpdateRepo() string {
+	if value := strings.TrimSpace(os.Getenv("CHATGPT2API_DEFAULT_UPDATE_REPO")); value != "" {
+		return value
+	}
+	if value := strings.TrimSpace(DefaultUpdateRepo); value != "" {
+		return value
+	}
+	return "ZyphrZero/chatgpt2api"
 }
 
 func GetInfo() Info {

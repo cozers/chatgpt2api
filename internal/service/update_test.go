@@ -57,7 +57,7 @@ func TestValidateUpdateDownloadURL(t *testing.T) {
 
 func TestExtractUpdateArchiveFindsEmbeddedRuntimePayload(t *testing.T) {
 	root := t.TempDir()
-	archivePath := filepath.Join(root, "chatgpt2api_1.2.3_linux_amd64.tar.gz")
+	archivePath := filepath.Join(root, "chatgpt2api_1.2.3_freebsd_amd64.tar.gz")
 	if err := writeTestUpdateArchive(archivePath); err != nil {
 		t.Fatalf("write archive: %v", err)
 	}
@@ -103,22 +103,22 @@ func TestGoReleaserArchiveDoesNotShipWebDist(t *testing.T) {
 	}
 }
 
-func TestGoReleaserBuildTargetsLinuxOnly(t *testing.T) {
+func TestGoReleaserBuildTargetsFreeBSDOnly(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", ".goreleaser.yaml"))
 	if err != nil {
 		t.Fatalf("read .goreleaser.yaml: %v", err)
 	}
 	config := string(data)
-	if !yamlListContains(config, "linux") {
-		t.Fatal(".goreleaser.yaml build targets must include linux")
+	if !yamlListContains(config, "freebsd") {
+		t.Fatal(".goreleaser.yaml build targets must include freebsd")
 	}
-	for _, entry := range []string{"windows", "darwin"} {
+	for _, entry := range []string{"linux", "windows", "darwin", "arm64"} {
 		if yamlListContains(config, entry) {
 			t.Fatalf(".goreleaser.yaml build targets must not include %s", entry)
 		}
 	}
 	if strings.Contains(config, "format_overrides:") {
-		t.Fatal(".goreleaser.yaml must not keep non-Linux archive format overrides")
+		t.Fatal(".goreleaser.yaml must not keep non-FreeBSD archive format overrides")
 	}
 }
 
@@ -139,6 +139,12 @@ func TestReleaseWorkflowUsesSingleGoReleaserConfig(t *testing.T) {
 	}
 	if !strings.Contains(workflow, "args: release --clean --skip=validate") {
 		t.Fatal("release workflow must run the main GoReleaser release path")
+	}
+	if strings.Contains(workflow, "docker/login-action") || strings.Contains(workflow, "setup-buildx-action") {
+		t.Fatal("release workflow must not publish Docker images")
+	}
+	if !strings.Contains(workflow, "repos/ZyphrZero/chatgpt2api/releases/tags/$TAG_NAME") {
+		t.Fatal("release workflow must mirror upstream release notes by tag")
 	}
 }
 
@@ -347,7 +353,7 @@ func writeTestUpdateArchive(path string) error {
 	tw := tar.NewWriter(gz)
 	defer tw.Close()
 	for name, content := range map[string]string{
-		"chatgpt2api_1.2.3_linux_amd64/" + binaryName: "binary",
+		"chatgpt2api_1.2.3_freebsd_amd64/" + binaryName: "binary",
 	} {
 		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o644, Size: int64(len(content))}); err != nil {
 			return err

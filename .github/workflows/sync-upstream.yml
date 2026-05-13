@@ -1,0 +1,45 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/ZyphrZero/chatgpt2api.git
+          git fetch upstream main --tags
+
+      - name: Merge upstream main
+        run: |
+          git checkout "${GITHUB_REF_NAME}"
+          git merge --no-edit upstream/main
+
+      - name: Push branch
+        run: git push origin HEAD:"${GITHUB_REF_NAME}"
+
+      - name: Mirror upstream tags
+        run: |
+          for tag in $(git tag -l 'v*'); do
+            if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+              continue
+            fi
+            git push origin "refs/tags/${tag}:refs/tags/${tag}"
+          done

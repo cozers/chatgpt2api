@@ -19,6 +19,10 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Set frontend defaults
+        run: |
+          echo "VITE_DEFAULT_UPDATE_REPO=${{ github.repository }}" >> "$GITHUB_ENV"
+
       - name: Install dependencies
         working-directory: web
         run: bun install --frozen-lockfile

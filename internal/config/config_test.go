@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"chatgpt2api/internal/version"
 )
 
 func TestStoreUpdatePersistsRuntimeSettings(t *testing.T) {
@@ -678,6 +680,25 @@ func TestStoreUpdatePersistsUpdateSettings(t *testing.T) {
 		if !strings.Contains(envText, want) {
 			t.Fatalf(".env missing %q:\n%s", want, envText)
 		}
+	}
+}
+
+func TestStoreUsesBuildDefaultUpdateRepo(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("CHATGPT2API_ROOT", root)
+	unsetEnv(t, "CHATGPT2API_UPDATE_REPO")
+	unsetEnv(t, "CHATGPT2API_DEFAULT_UPDATE_REPO")
+
+	original := version.DefaultUpdateRepo
+	version.DefaultUpdateRepo = "fork-owner/chatgpt2api"
+	t.Cleanup(func() { version.DefaultUpdateRepo = original })
+
+	store, err := NewStore()
+	if err != nil {
+		t.Fatalf("NewStore() error = %v", err)
+	}
+	if got := store.UpdateRepo(); got != "fork-owner/chatgpt2api" {
+		t.Fatalf("UpdateRepo() = %q, want build default", got)
 	}
 }
 
