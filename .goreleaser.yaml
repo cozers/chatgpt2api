@@ -32,10 +32,6 @@ archives:
       - .env.example
       - deploy/docker-compose.yml
 
-checksum:
-  name_template: checksums.txt
-  algorithm: sha256
-
 changelog:
   disable: true
 

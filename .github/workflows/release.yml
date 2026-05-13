@@ -97,6 +97,32 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Remove existing release
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = `${{ steps.meta.outputs.tag }}`;
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag,
+              });
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+              });
+              core.info(`Deleted existing release for ${tag}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`No existing release found for ${tag}`);
+                return;
+              }
+              throw error;
+            }
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
