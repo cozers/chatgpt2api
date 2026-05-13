@@ -223,8 +223,7 @@ func TestAdminSystemCheckUpdates(t *testing.T) {
 			"html_url": "https://github.com/ZyphrZero/chatgpt2api/releases/tag/v1.2.0",
 			"published_at": "2026-01-01T00:00:00Z",
 			"assets": [
-				{"name":"chatgpt2api_1.2.0_freebsd_amd64.tar.gz","browser_download_url":"https://github.com/ZyphrZero/chatgpt2api/releases/download/v1.2.0/chatgpt2api_1.2.0_freebsd_amd64.tar.gz","size":123},
-				{"name":"checksums.txt","browser_download_url":"https://github.com/ZyphrZero/chatgpt2api/releases/download/v1.2.0/checksums.txt","size":64}
+				{"name":"chatgpt2api_1.2.0_freebsd_amd64.tar.gz","browser_download_url":"https://github.com/ZyphrZero/chatgpt2api/releases/download/v1.2.0/chatgpt2api_1.2.0_freebsd_amd64.tar.gz","size":123}
 			]
 		}`))
 	}))
