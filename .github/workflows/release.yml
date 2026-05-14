@@ -64,7 +64,7 @@ jobs:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Download frontend artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v5
         with:
           name: web-dist
           path: internal/web/dist/
