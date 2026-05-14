@@ -87,15 +87,28 @@ jobs:
             TAG_NAME="${GITHUB_REF#refs/tags/}"
           fi
           echo "tag=${TAG_NAME}" >> "$GITHUB_OUTPUT"
-          BODY="$(gh api repos/ZyphrZero/chatgpt2api/releases/tags/$TAG_NAME --jq .body 2>/dev/null || true)"
-          if [ -z "$BODY" ]; then
-            BODY="$(git tag -l --format='%(contents:body)' "$TAG_NAME")"
-          fi
-          {
-            echo "body<<EOF"
-            echo "$BODY"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+
+      - name: Fetch upstream release notes
+        id: notes
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = `${{ steps.meta.outputs.tag }}`;
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: "ZyphrZero",
+                repo: "chatgpt2api",
+                tag,
+              });
+              core.setOutput("body", release.data.body || "");
+            } catch (error) {
+              if (error.status === 404) {
+                core.setOutput("body", "");
+                return;
+              }
+              throw error;
+            }
 
       - name: Remove existing release
         uses: actions/github-script@v8
@@ -130,6 +143,6 @@ jobs:
           args: release --clean --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_MESSAGE: ${{ steps.meta.outputs.body }}
+          TAG_MESSAGE: ${{ steps.notes.outputs.body }}
           GITHUB_REPO_OWNER: ${{ github.repository_owner }}
           GITHUB_REPO_NAME: ${{ github.event.repository.name }}
