@@ -143,7 +143,7 @@ func TestReleaseWorkflowUsesSingleGoReleaserConfig(t *testing.T) {
 	if strings.Contains(workflow, "docker/login-action") || strings.Contains(workflow, "setup-buildx-action") {
 		t.Fatal("release workflow must not publish Docker images")
 	}
-	if !strings.Contains(workflow, "repos/ZyphrZero/chatgpt2api/releases/tags/$TAG_NAME") {
+	if !strings.Contains(workflow, `owner: "ZyphrZero"`) || !strings.Contains(workflow, `repo: "chatgpt2api"`) || !strings.Contains(workflow, "getReleaseByTag") {
 		t.Fatal("release workflow must mirror upstream release notes by tag")
 	}
 }
