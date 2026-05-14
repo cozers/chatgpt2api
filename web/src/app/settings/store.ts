@@ -41,6 +41,7 @@ import {
   normalizeLoginPageImageTransform,
   type LoginPageImageMode,
 } from "@/lib/login-page-image-layout";
+import webConfig from "@/constants/common-env";
 
 export const PAGE_SIZE_OPTIONS = ["50", "100", "200"] as const;
 
