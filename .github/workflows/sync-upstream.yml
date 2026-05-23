@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: sync-upstream-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -24,13 +28,14 @@ jobs:
 
       - name: Fetch upstream
         run: |
-          git remote add upstream https://github.com/ZyphrZero/chatgpt2api.git
+          git remote add upstream https://github.com/ZyphrZero/chatgpt2api.git 2>/dev/null || \
+            git remote set-url upstream https://github.com/ZyphrZero/chatgpt2api.git
           git fetch upstream main
           git fetch upstream "refs/tags/v*:refs/tags/upstream/v*"
 
       - name: Merge upstream main
         run: |
-          git checkout "${GITHUB_REF_NAME}"
+          git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}"
           git merge --no-edit upstream/main
 
       - name: Push branch
