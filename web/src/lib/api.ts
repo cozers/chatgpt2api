@@ -2,7 +2,7 @@ import { httpRequest } from "@/lib/request";
 import type { LoginPageImageMode } from "@/lib/login-page-image-layout";
 
 export type AccountType = "Free" | "Plus" | "ProLite" | "Pro" | "Team";
-export type AccountStatus = "正常" | "限流" | "异常" | "禁用";
+export type AccountStatus = "正常" | "限流" | "异常" | "禁用" | "刷新中" | "过期待刷新";
 export const IMAGE_MODEL_OPTIONS = [
   { value: "auto", label: "Auto" },
   { value: "gpt-image-2", label: "gpt-image-2" },
@@ -121,6 +121,7 @@ export function supportsImageOutputCompression(format: ImageOutputFormat) {
 
 export type AuthRole = "admin" | "user";
 export type AnnouncementTarget = "login" | "image";
+export type LogView = "all" | "meaningful" | "business";
 
 export type PermissionMenu = {
   id: string;
@@ -176,6 +177,8 @@ type AccountMutationResponse = {
   skipped?: number;
   removed?: number;
   refreshed?: number;
+  session_refreshed?: number;
+  session_failed?: number;
   errors?: Array<{ access_token?: string; account_id?: string; error: string }>;
   results?: AccountRefreshResult[];
   total?: number;
@@ -230,6 +233,7 @@ export type SettingsConfig = {
   image_retention_days?: number | string;
   image_storage_limit_mb?: number | string;
   log_retention_days?: number | string;
+  default_log_view?: LogView | string;
   auto_remove_invalid_accounts?: boolean;
   auto_remove_rate_limited_accounts?: boolean;
   log_levels?: string[];
@@ -316,6 +320,7 @@ export type SystemLogFilters = {
   ip_address?: string;
   operation_type?: string;
   log_level?: string;
+  view?: LogView | string;
   start_date?: string;
   end_date?: string;
   start_time?: string;
@@ -439,6 +444,13 @@ export type CreationTask = {
 export type CreationTaskMessage = {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
+};
+
+export type FallbackReferenceImage = {
+  path?: string;
+  url?: string;
+  b64_json?: string;
+  outputFormat?: ImageOutputFormat;
 };
 
 export type ChatCompletionResponse = {
@@ -799,6 +811,13 @@ export async function createAccounts(tokens: string[]) {
   });
 }
 
+export async function createAccountFromSession(sessionJson: string) {
+  return httpRequest<AccountMutationResponse>("/api/accounts/session", {
+    method: "POST",
+    body: { session_json: sessionJson },
+  });
+}
+
 export async function deleteAccounts(accountIds: string[]) {
   return httpRequest<AccountMutationResponse>("/api/accounts", {
     method: "DELETE",
@@ -893,6 +912,8 @@ export async function createImageGenerationTask(
     style?: string;
     partialImages?: number;
   },
+  frontendConversationId?: string,
+  fallbackReferenceImage?: FallbackReferenceImage,
 ) {
   return httpRequest<CreationTask>("/api/creation-tasks/image-generations", {
     method: "POST",
@@ -910,6 +931,8 @@ export async function createImageGenerationTask(
       ...(toolOptions?.style ? { style: toolOptions.style } : {}),
       ...(typeof toolOptions?.partialImages === "number" ? { partial_images: toolOptions.partialImages } : {}),
       ...(messages?.length ? { messages } : {}),
+      ...(frontendConversationId ? { frontend_conversation_id: frontendConversationId } : {}),
+      ...(fallbackReferenceImage ? { fallback_reference_image: fallbackReferenceImage } : {}),
       visibility,
       n: count,
     },
@@ -936,6 +959,8 @@ export async function createImageEditTask(
     partialImages?: number;
     inputImageMask?: string;
   },
+  frontendConversationId?: string,
+  fallbackReferenceImage?: FallbackReferenceImage,
 ) {
   const formData = new FormData();
   const uploadFiles = Array.isArray(files) ? files : [files];
@@ -980,6 +1005,12 @@ export async function createImageEditTask(
   }
   if (messages?.length) {
     formData.append("messages", JSON.stringify(messages));
+  }
+  if (frontendConversationId) {
+    formData.append("frontend_conversation_id", frontendConversationId);
+  }
+  if (fallbackReferenceImage) {
+    formData.append("fallback_reference_image", JSON.stringify(fallbackReferenceImage));
   }
   formData.append("visibility", visibility);
   formData.append("n", String(count));
@@ -1137,12 +1168,12 @@ export async function deleteManagedImages(paths: string[]) {
 export async function fetchSystemLogs(filters: SystemLogFilters) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
-    if (value === undefined || value === null || value === "" || value === "all") {
+    if (value === undefined || value === null || value === "" || (key !== "view" && value === "all")) {
       continue;
     }
     params.set(key, String(value));
   }
-  return httpRequest<{ items: SystemLog[] }>(`/api/logs${params.toString() ? `?${params.toString()}` : ""}`);
+  return httpRequest<{ items: SystemLog[]; view?: LogView | string }>(`/api/logs${params.toString() ? `?${params.toString()}` : ""}`);
 }
 
 export async function fetchLogGovernance() {
